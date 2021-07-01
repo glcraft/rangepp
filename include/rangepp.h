@@ -1,1 +1,6 @@
 #include <ranges>
+
+namespace rpp
+{
+    
+}
