@@ -58,9 +58,14 @@ namespace rpp
                     return *m_current + 1;
                 }
                 constexpr Self& operator++()
-                { ++m_current; return this; }
+                { 
+                    ++m_current; 
+                    return *this; 
+                    }
                 constexpr void operator++(int)
-                { ++m_current; }
+                { 
+                    ++m_current; 
+                    }
                 constexpr Self& operator++(int) requires forward_range<Base>
                 { auto tmp = *this; ++*this; return tmp; }
                 constexpr Self& operator--()
@@ -71,6 +76,10 @@ namespace rpp
                 { m_current+=n; return *this; }
                 constexpr Self& operator-=( difference_type n ) requires random_access_range<Base>
                 { m_current-=n; return *this; }
+                [[nodiscard]] friend constexpr bool operator==( const Self& x, const Self& y )
+                {
+                    return x.m_current == y.m_current;
+                }
             };
             plus_one_view() requires std::default_initializable<Range>
             {}
@@ -99,8 +108,10 @@ namespace rpp
             {
                 return iterator{std::ranges::end(m_rng)};
             }
+            
 
         };
+        
         class plus_one_fn
         {
             public:
