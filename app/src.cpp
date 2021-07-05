@@ -4,11 +4,16 @@
 #include <iostream>
 int main()
 {
-    auto v = std::array{1,2,3};
-    auto t = v | rpp::plus_one;
-    // auto t = v | std::views::transform([](int i) { return i+1; });
-    // std::vector<int> v2{std::ranges::begin(t), std::ranges::end(t)};
+    using namespace rpp::conv;
+    auto v = std::string("Héllöworld");
+    auto t = v | from(utf8);
+
     for(auto i : t)
-        std::cout << i << std::endl;
+    {
+        std::cout << std::dec<<i << '(' << std::hex << i << ") ";
+        if (i<0x80)
+            std::cout <<(char)i;
+        std::cout << std::endl;
+    }
     return 0;
 }
