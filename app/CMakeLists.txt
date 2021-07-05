@@ -10,3 +10,6 @@ set_target_properties(rangepp_app PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
 )
+if (MSVC)
+    target_compile_options(rangepp_app PRIVATE "/experimental:module")
+endif()
