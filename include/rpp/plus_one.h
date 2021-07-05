@@ -21,7 +21,7 @@ namespace rpp
                 using value_type = typename Base::value_type;
                 using difference_type = std::ranges::range_difference_t<Base>;
 
-                iterator() requires std::default_initializable<iterator_t<Base>> = default;
+                iterator() requires std::default_initializable<std::ranges::iterator_t<Base>> = default;
                 iterator(std::ranges::iterator_t<Base> current) : m_current(std::move(current)) 
                 {}
                 constexpr decltype(auto) operator*() const
@@ -37,7 +37,7 @@ namespace rpp
                 {
                     ++m_current;
                 }
-                constexpr Self &operator++(int) requires forward_range<Base>
+                constexpr Self &operator++(int) requires std::ranges::forward_range<Base>
                 {
                     auto tmp = *this;
                     ++*this;
@@ -48,18 +48,18 @@ namespace rpp
                     --m_current;
                     return this;
                 }
-                constexpr Self &operator--(int) requires forward_range<Base>
+                constexpr Self &operator--(int) requires std::ranges::forward_range<Base>
                 {
                     auto tmp = *this;
                     --*this;
                     return tmp;
                 }
-                constexpr Self &operator+=(difference_type n) requires random_access_range<Base>
+                constexpr Self &operator+=(difference_type n) requires std::ranges::random_access_range<Base>
                 {
                     m_current += n;
                     return *this;
                 }
-                constexpr Self &operator-=(difference_type n) requires random_access_range<Base>
+                constexpr Self &operator-=(difference_type n) requires std::ranges::random_access_range<Base>
                 {
                     m_current -= n;
                     return *this;
