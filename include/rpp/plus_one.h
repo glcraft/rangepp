@@ -43,27 +43,27 @@ namespace rpp
                     ++*this;
                     return tmp;
                 }
-                constexpr Self &operator--()
-                {
-                    --m_current;
-                    return this;
-                }
-                constexpr Self &operator--(int) requires std::ranges::forward_range<Base>
-                {
-                    auto tmp = *this;
-                    --*this;
-                    return tmp;
-                }
+                // constexpr Self &operator--()
+                // {
+                //     --m_current;
+                //     return this;
+                // }
+                // constexpr Self &operator--(int) requires std::ranges::forward_range<Base>
+                // {
+                //     auto tmp = *this;
+                //     --*this;
+                //     return tmp;
+                // }
                 constexpr Self &operator+=(difference_type n) requires std::ranges::random_access_range<Base>
                 {
                     m_current += n;
                     return *this;
                 }
-                constexpr Self &operator-=(difference_type n) requires std::ranges::random_access_range<Base>
-                {
-                    m_current -= n;
-                    return *this;
-                }
+                // constexpr Self &operator-=(difference_type n) requires std::ranges::random_access_range<Base>
+                // {
+                //     m_current -= n;
+                //     return *this;
+                // }
                 [[nodiscard]] friend constexpr bool operator==(const Self &x, const Self &y)
                 {
                     return x.m_current == y.m_current;

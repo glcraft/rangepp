@@ -17,14 +17,14 @@ namespace rpp
             using input_type = char8_t;
             using output_type = char8_t;
             constexpr utf8_converter() = default;
-            constexpr utf8_converter(const utf8_converter&) = default;
-            constexpr utf8_converter(utf8_converter&&) = default;
+            // constexpr utf8_converter(const utf8_converter&) = default;
+            // constexpr utf8_converter(utf8_converter&&) = default;
 
             template <typename Iter>
                 requires std::forward_iterator<Iter> && requires (Iter a){//utf8_char<typename Iter::value_type>
                     {sizeof(*a)==1};
                 }
-            [[nodiscard]] constexpr uint32_t from(const Iter& iter) noexcept {
+            [[nodiscard]] constexpr uint32_t from(const Iter& iter) const noexcept {
                 auto myiter = iter;
                 auto fschar = static_cast<uint8_t>(*(myiter++));
                 auto nchar = GetCharBytes(fschar);
