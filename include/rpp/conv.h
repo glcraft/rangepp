@@ -83,8 +83,7 @@ namespace rpp
                     }
                 };
                 from_view() requires std::default_initializable<Range> = default;
-                from_view(const from_view&) = default;
-                from_view(from_view&&) = default;
+                
                 constexpr from_view(Range rng, Converter conv) : m_rng(std::move(rng)), m_conv(std::move(conv))
                 {}
 
@@ -137,7 +136,6 @@ namespace rpp
             {
                 return from_view(std::forward<Range>(rng), std::forward<Converter>(store.c));
             }
-
             template <std::ranges::viewable_range Range, to_converter<std::ranges::iterator_t<Range>> Converter>
             class to_view : public std::ranges::view_interface<to_view<Range, Converter>>{
                 Range m_rng;
@@ -146,28 +144,27 @@ namespace rpp
                 class iterator {
                     using Self = iterator;
                     using Parent = to_view<Range, Converter>;
-                    using Base = Range;
+                    using Base = const Range;
                     std::ranges::iterator_t<Base> m_current;
-                    Converter m_conv;
+                    mutable Converter m_conv;
                 public:
                     using iterator_concept = rpp::impl::tag_from_range_t<Range>;
-                    // using iterator_category = ;
                     using value_type = uint32_t;
                     using difference_type = std::ranges::range_difference_t<Base>;
 
-                    iterator() requires std::default_initializable<std::ranges::iterator_t<Base>> = default;
-                    iterator(std::ranges::iterator_t<Base> current, Converter&& c) : m_current(std::move(current)) , m_conv(std::forward(c))
+                    constexpr iterator()  = default;
+                    constexpr iterator(std::ranges::iterator_t<Base>&& current, Converter&& conv) : m_current(std::move(current)), m_conv(std::move(conv))
                     {}
-                    [[nodiscard]] constexpr decltype(auto) operator*()
+                    [[nodiscard]] constexpr decltype(auto) operator*() const
                     {
-                        return m_conv.template from<std::ranges::iterator_t<Base>>(m_current);
+                        return m_conv.template to<std::ranges::iterator_t<Base>>(m_current);
                     }
                     constexpr Self &operator++()
                     {
                         advance();
                         return *this;
                     }
-                    constexpr Self &operator++(int)
+                    constexpr Self operator++(int)
                     {
                         auto tmp = *this;
                         advance();
@@ -185,14 +182,15 @@ namespace rpp
                 private:
                     inline void advance()
                     {
+                        // std::advance(m_current, Converter::GetCharBytes(*m_current));
                         m_conv.next();
                         if (m_conv.remains_characters()==0)
                             ++m_current;
                     }
                 };
-                to_view() requires std::default_initializable<Range>
-                {}
-                constexpr to_view(Range rng, Converter conv) : m_rng(std::move(rng)), m_conv(conv)
+                to_view() requires std::default_initializable<Range> = default;
+                
+                constexpr to_view(Range rng, Converter conv) : m_rng(std::move(rng)), m_conv(std::move(conv))
                 {}
 
                 [[nodiscard]] inline constexpr Range base() const& noexcept {
@@ -205,20 +203,20 @@ namespace rpp
                 {
                     return iterator{std::ranges::begin(m_rng), Converter{m_conv}};
                 }
-                // constexpr auto begin()
-                // {
-                //     return iterator{std::ranges::begin(m_rng), *this};
-                // }
+                constexpr auto begin()
+                {
+                    return iterator{std::ranges::begin(m_rng), Converter{m_conv}};
+                }
                 constexpr auto end() const
                 {
                     return iterator{std::ranges::end(m_rng), Converter{m_conv}};
                 }
-                // constexpr auto end()
-                // {
-                //     return iterator{std::ranges::end(m_rng), *this};
-                // }
+                constexpr auto end()
+                {
+                    return iterator{std::ranges::end(m_rng), Converter{m_conv}};
+                }
             };
-            template <std::ranges::viewable_range Range, from_converter<std::ranges::iterator_t<Range>> Converter>
+            template <std::ranges::viewable_range Range, to_converter<std::ranges::iterator_t<Range>> Converter>
             to_view(Range&&, Converter) -> to_view<std::views::all_t<Range>, Converter>;
             template <typename T>
             struct to_store {
@@ -228,25 +226,24 @@ namespace rpp
             {
                 public:
                     template <std::ranges::viewable_range Range, to_converter<std::ranges::iterator_t<Range>> Converter>
-                    inline constexpr auto operator()(Range&& rng, std::remove_reference_t<Converter> conv) const noexcept
+                    inline constexpr auto operator()(Range&& rng, Converter&& conv) const noexcept
                     {
-                        return to_view(std::move(rng), std::move(conv));
+                        return to_view(std::forward<Range>(rng), std::forward<Converter>(conv));
                     }
                     template <typename T>
-                    inline constexpr auto operator()(std::remove_reference_t<T> conv) const noexcept
+                    inline constexpr auto operator()(T&& conv) const noexcept
                     {
-                        return to_store{std::move(conv)};
+                        return to_store{conv};
                     }
                 private:
             };
             template <std::ranges::viewable_range Range, to_converter<std::ranges::iterator_t<Range>> Converter>
             auto operator|(Range&& rng, to_store<Converter> store)
             {
-                return to_view<Range, std::remove_reference_t<Converter>>(std::views::all(rng), std::move(store.c));
+                return to_view(std::forward<Range>(rng), std::forward<Converter>(store.c));
             }
 
-
-        } // namespace impl
+        }
         inline constexpr impl::from_fn from;
         inline constexpr impl::to_fn to;
     } // namespace conv
