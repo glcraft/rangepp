@@ -21,10 +21,13 @@ void jhfds(T)
 int main()
 {
     using namespace rpp::conv;
-    auto t = std::string_view("hélloà") | from(utf8)| to(utf8);
-
-    for(auto i : t)
+    auto t = std::string_view("hélloà") | from<utf8> | to<utf8>;
+    // static_assert(rpp::conv::from_container<utf8, std::string_view>);
+    // static_assert(rpp::conv::to_container<utf8, std::string_view>);
+    // for(auto i : t)
+    for (auto it = t.begin(); it!=t.end();++it)
     {
+        auto i = *it;
         auto c = static_cast<char>(i);
         auto v = static_cast<int>(i);
         std::cout << std::dec << v << '(' << std::hex << v << ") ";
