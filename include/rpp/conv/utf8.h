@@ -7,30 +7,30 @@ namespace rpp
 {
     namespace conv
     {
-        template <typename Ch>
-        concept one_byte_char = requires {
-            sizeof(std::remove_reference_t<Ch>) == 1;
-        };
+        // template <typename Ch>
+        // concept one_byte_char = requires {
+        //     sizeof(std::remove_reference_t<Ch>) == 1;
+        // };
         template <typename Iter>
         concept utf8_from_iterator = std::forward_iterator<Iter> 
-            && std::copyable<Iter>
-            && requires (Iter a) {
-                {*a} -> one_byte_char;
-            };
+            && std::copyable<Iter>;
         template <typename Iter>
         concept utf8_to_iterator = std::forward_iterator<Iter> 
-            && std::copyable<Iter>
-            && requires (Iter a) {
-                {*a} -> std::convertible_to<uint32_t>;
-            };
+            && std::copyable<Iter>;
+        template <typename CharType, size_t CharNumb>
+        struct CharsInfo
+        {
+            std::array<CharType, CharNumb> chars = {};
+            char size=0;
+        };
         
-        template <one_byte_char CharType>
-        class utf8_converter
+        template <typename CharType, size_t CharNumb, auto from_func, auto to_func>
+        class char_converter
         {
         public:
             using input_type = CharType;
             using output_type = CharType;
-            constexpr utf8_converter() = default;
+            constexpr char_converter() = default;
             template <std::ranges::viewable_range Range>
                 requires std::forward_iterator<std::ranges::iterator_t<Range>>
             class from
@@ -52,28 +52,11 @@ namespace rpp
                 {}
 
                 [[nodiscard]] constexpr decltype(auto) operator*() const noexcept {
-                    auto myiter = m_iter;
-                    auto fschar = static_cast<uint8_t>(*(myiter++));
-                    auto nchar = GetCharBytes(fschar);
-                    {
-                        if (nchar == 1)
-                            return static_cast<uint32_t>(fschar);
-                        else
-                        {
-                            uint32_t result = 0;
-                            result = static_cast<uint32_t>(fschar & (0x7F >> nchar)) << 6;
-                            for (int i = nchar - 1; i > 0; i--, result<<6, ++myiter)
-                            {
-                                auto test = static_cast<uint8_t>(*myiter);
-                                result += static_cast<uint32_t>(test & 0x3F);
-                            }
-                            return result;
-                        }
-                    }
+                    return from_func(m_iter);
                 }
                 constexpr from& operator++() 
                 {
-                    std::advance(m_iter, utf8_converter::GetCharBytes(*m_iter));
+                    std::advance(m_iter, char_converter::GetCharBytes(*m_iter));
                     return *this;
                 }
                 constexpr from operator++(int) 
@@ -94,46 +77,8 @@ namespace rpp
                 using Base = const Range;
                 using Iterator = std::ranges::iterator_t<Range>;
                 Iterator m_iter;
-                struct CharsInfo
-                {
-                    std::array<CharType, 4> chars = {};
-                    char current=4, size=0;
-                    constexpr void load_char(uint32_t ch) noexcept
-                    {
-                        constexpr auto create_subchar = [](auto ch, unsigned char add = 0x80) {
-                            return  static_cast<char>(add | static_cast<unsigned char>(ch));
-                        };
-                        
-                        if (ch <= 0x7F)
-                        {
-                            chars[0] = ch;
-                            size = 1;
-                        }
-                        else if (ch <= 0x07FF)
-                        {
-                            chars[0] = create_subchar(ch >> 6, 0xC0);
-                            chars[1] = create_subchar(ch & 0x3f);
-                            size = 2;
-                        }
-                        else if (ch <= 0xFFFF)
-                        {
-                            chars[0] = create_subchar(ch >> 12, 0xE0);
-                            chars[1] = create_subchar((ch >> 6) & 0x3f);
-                            chars[2] = create_subchar(ch & 0x3f);
-                            size = 3;
-                        }
-                        else
-                        {
-                            chars[0] = create_subchar(ch >> 18, 0xE0);
-                            chars[1] = create_subchar((ch >> 12) & 0x3f);
-                            chars[2] = create_subchar((ch >> 6) & 0x3f);
-                            chars[3] = create_subchar(ch & 0x3f);
-                            size = 4;
-                        }
-                        current=0;
-                    }
-                } mutable m_chars;
-                
+                CharsInfo<CharType, CharNumb> mutable m_chars;
+                char mutable m_current_char = CharNumb;
             public:
                 using input_type = uint32_t;
                 using output_type = CharType;
@@ -147,13 +92,16 @@ namespace rpp
                 to(Iterator&& it) : m_iter(std::move(it))
                 {}
                 [[nodiscard]] constexpr CharType operator*() const noexcept {
-                    if (m_chars.current >= m_chars.size)
-                        m_chars.load_char(*m_iter);
-                    return m_chars.chars[m_chars.current];
+                    if (m_current_char >= m_chars.size)
+                    {
+                        m_chars = to_func(m_iter);
+                        m_current_char = 0;
+                    }
+                    return m_chars.chars[m_current_char];
                 }
                 constexpr to& operator++() {
-                    ++m_chars.current;
-                    if (m_chars.current >= m_chars.size)
+                    ++m_current_char;
+                    if (m_current_char >= m_chars.size)
                         ++m_iter;
                     return *this;
                 }
@@ -169,19 +117,71 @@ namespace rpp
                 }
                 
             };
-            static int GetCharBytes(uint8_t ch) {
-                if ((ch & 0x80) == 0)
-                    return 1;
-                if ((ch & 0xE0) == 0xC0)
-                    return 2;
-                if ((ch & 0xF0) == 0xE0)
-                    return 3;
-                if ((ch & 0xF8) == 0xF0)
-                    return 4;
-                return 1; // default : char copy and advance
-            }
         };
-        using utf8 = utf8_converter<char>;
-        using u8_utf8 = utf8_converter<char8_t>;
+        using utf8 = char_converter<char, 4, 
+            [](auto myiter) { 
+                auto fschar = static_cast<uint8_t>(*(myiter++));
+                auto nchar = [](uint8_t ch) {
+                    if ((ch & 0x80) == 0)
+                        return 1;
+                    if ((ch & 0xE0) == 0xC0)
+                        return 2;
+                    if ((ch & 0xF0) == 0xE0)
+                        return 3;
+                    if ((ch & 0xF8) == 0xF0)
+                        return 4;
+                    return 1; // default : char copy and advance
+                }(fschar);
+                {
+                    if (nchar == 1)
+                        return static_cast<uint32_t>(fschar);
+                    else
+                    {
+                        uint32_t result = 0;
+                        result = static_cast<uint32_t>(fschar & (0x7F >> nchar)) << 6;
+                        for (int i = nchar - 1; i > 0; i--, result<<6, ++myiter)
+                        {
+                            auto test = static_cast<uint8_t>(*myiter);
+                            result += static_cast<uint32_t>(test & 0x3F);
+                        }
+                        return result;
+                    }
+                }
+            }, 
+            [](const auto& it) { 
+                constexpr auto create_subchar = [](auto ch, unsigned char add = 0x80) {
+                    return  static_cast<char>(add | static_cast<unsigned char>(ch));
+                };
+                CharsInfo<char, 4> result;
+                auto ch = *it;
+                if (ch <= 0x7F)
+                {
+                    result.chars[0] = ch;
+                    result.size = 1;
+                }
+                else if (ch <= 0x07FF)
+                {
+                    result.chars[0] = create_subchar(ch >> 6, 0xC0);
+                    result.chars[1] = create_subchar(ch & 0x3f);
+                    result.size = 2;
+                }
+                else if (ch <= 0xFFFF)
+                {
+                    result.chars[0] = create_subchar(ch >> 12, 0xE0);
+                    result.chars[1] = create_subchar((ch >> 6) & 0x3f);
+                    result.chars[2] = create_subchar(ch & 0x3f);
+                    result.size = 3;
+                }
+                else
+                {
+                    result.chars[0] = create_subchar(ch >> 18, 0xE0);
+                    result.chars[1] = create_subchar((ch >> 12) & 0x3f);
+                    result.chars[2] = create_subchar((ch >> 6) & 0x3f);
+                    result.chars[3] = create_subchar(ch & 0x3f);
+                    result.size = 4;
+                }
+                return result;
+            }>;
+        // using u8_utf8 = char_converter<char8_t, [](auto it) { return it; }, [](auto it) { return it; }>;
     }
 }
