@@ -21,19 +21,22 @@ void jhfds(T)
 int main()
 {
     using namespace rpp::conv;
-    auto t = std::string_view("hélloà") | from<utf8> | to<utf8>;
-    // static_assert(rpp::conv::from_container<utf8, std::string_view>);
-    // static_assert(rpp::conv::to_container<utf8, std::string_view>);
-    // for(auto i : t)
+    using namespace std::literals;
+    auto t = u"h\xe9llo\x305d\x308c\x306f\x30c6\x30b9\x30c8\x3067\x3059"sv 
+        | from<utf16be>
+        | to<utf8>;
     for (auto it = t.begin(); it!=t.end();++it)
     {
         auto i = *it;
         auto c = static_cast<char>(i);
-        auto v = static_cast<int>(i);
+        auto v = static_cast<uint32_t>(*reinterpret_cast<uint8_t*>(&i));
         std::cout << std::dec << v << '(' << std::hex << v << ") ";
         if (v<0x80)
             std::cout <<c;
         std::cout << std::endl;
     }
+    for(auto i : t)
+        std::cout.put(i);
+    std::cout << "\n";
     return 0;
 }

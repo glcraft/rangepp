@@ -75,12 +75,12 @@ namespace rpp
                 private:
             };
             template <std::ranges::viewable_range Range, from_container<Range> Container>
-            auto operator|(Range&& rng, from_fn<Container>)
+            constexpr auto operator|(Range&& rng, from_fn<Container>)
             {
                 return from_view<Range, typename Container::template from<Range>>(std::forward<Range>(rng));
             }
             template <std::ranges::viewable_range Range, from_converter Converter>
-            auto operator|(Range&& rng, Converter)
+            constexpr auto operator|(Range&& rng, Converter)
             {
                 return from_view<Range, Converter>(std::forward<Range>(rng));
             }
@@ -131,12 +131,12 @@ namespace rpp
                 private:
             };
             template <std::ranges::viewable_range Range, to_container<Range> Container>
-            auto operator|(Range&& rng, to_fn<Container>)
+            constexpr auto operator|(Range&& rng, to_fn<Container>)
             {
                 return to_view<Range, typename Container::template to<Range>>(std::forward<Range>(rng));
             }
             template <std::ranges::viewable_range Range, to_converter Converter>
-            auto operator|(Range&& rng, Converter store)
+            constexpr auto operator|(Range&& rng, Converter store)
             {
                 return to_view<Range, Converter>(std::forward<Range>(rng));
             }
