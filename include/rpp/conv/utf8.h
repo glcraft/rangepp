@@ -272,6 +272,17 @@ namespace rpp
                 return result;
             }
         >;
+        using utf32 = char_converter<char32_t, 1, 
+            [](auto &it) {
+                return 1;
+            },
+            [](auto it) {
+                return static_cast<uint32_t>(*it);
+            },
+            [](const auto& it) {
+                return  CharsInfo<char32_t, 1>{ {static_cast<char32_t>(*it)}, 1};
+            }
+            >;
         // using u8_utf8 = char_converter<char8_t, [](auto it) { return it; }, [](auto it) { return it; }>;
     }
 }
