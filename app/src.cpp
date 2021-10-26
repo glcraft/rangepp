@@ -47,22 +47,14 @@ int main()
 {
     using namespace rpp::conv;
     using namespace std::literals;
-    auto t = u"h\xe9llo\x305d\x308c\x306f\x30c6\x30b9\x30c8\x3067\x3059"sv 
-        | from<utf16be>
-        | to<utf32>;
-    for (auto it = t.begin(); it!=t.end();++it)
+    auto from_u8 = "hélloそれはテストです"| from<utf8>;
+    auto from_u16 = u"h\xe9llo\x305d\x308c\x306f\x30c6\x30b9\x30c8\x3067\x3059"sv | from<utf16be> | from<utf8>;
+    auto to_utf8 = from_u16;
+    for(auto it = to_utf8.begin(); it!=to_utf8.end();++it)
     {
-        auto i = *it;
-        auto c = static_cast<char>(i);
-        
-        auto v = unsigned_cast(i);
-        std::cout << std::dec << v << '(' << std::hex << v << ") ";
-        if (v<0x80)
-            std::cout <<c;
-        std::cout << std::endl;
+        auto c = *it;
+        std::cout << c << ' ';
     }
-    for(auto i : t)
-        std::cout.put(i);
-    std::cout << "\n";
+    std::cout.put('\n');
     return 0;
 }
