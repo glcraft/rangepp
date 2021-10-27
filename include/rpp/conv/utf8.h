@@ -16,9 +16,9 @@ namespace rpp
         template <typename Iter>
         concept utf8_to_iterator = std::forward_iterator<Iter> 
             && std::copyable<Iter>;
-
+        
         struct Utf8Conv {
-            static constexpr uint64_t max_char = 4;
+            static constexpr uint32_t max_char = 4;
             using char_type = char;
             using sequence_type = std::array<char_type, max_char>;
 
@@ -86,7 +86,7 @@ namespace rpp
         };
         template <bool BigEndian>
         struct Utf16Conv {
-            static constexpr uint64_t max_char = 2;
+            static constexpr uint32_t max_char = 2;
             static constexpr bool is_big_endian = BigEndian;
             using char_type = char16_t;
             
