@@ -6,17 +6,6 @@ namespace rpp
 {
     namespace conv
     {
-        // template <typename Ch>
-        // concept one_byte_char = requires {
-        //     sizeof(std::remove_reference_t<Ch>) == 1;
-        // };
-        template <typename Iter>
-        concept utf8_from_iterator = std::forward_iterator<Iter> 
-            && std::copyable<Iter>;
-        template <typename Iter>
-        concept utf8_to_iterator = std::forward_iterator<Iter> 
-            && std::copyable<Iter>;
-        
         struct Utf8Conv {
             static constexpr uint32_t max_char = 4;
             using char_type = char;
