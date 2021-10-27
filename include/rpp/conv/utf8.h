@@ -6,9 +6,10 @@ namespace rpp
 {
     namespace conv
     {
+        template <typename CharType>
         struct Utf8Conv {
             static constexpr uint32_t max_char = 4;
-            using char_type = char;
+            using char_type = CharType;
             using sequence_type = std::array<char_type, max_char>;
 
             static constexpr uint32_t length(char_type ch) {
@@ -40,9 +41,9 @@ namespace rpp
             }
             static constexpr CharsInfo<char_type, max_char> to(uint32_t ch) {
                 constexpr auto create_subchar = [](auto ch, unsigned char add = 0x80) {
-                    return  static_cast<char>(add | static_cast<unsigned char>(ch));
+                    return  static_cast<CharType>(add | static_cast<unsigned char>(ch));
                 };
-                CharsInfo<char, 4> result;
+                CharsInfo<char_type, 4> result;
                 
                 if (ch <= 0x7F)
                 {
@@ -121,9 +122,9 @@ namespace rpp
                 return result;
             }
         };
-        using utf8 = char_converter<char, Utf8Conv>;
+        using utf8 = char_converter<char, Utf8Conv<char>>;
+        using utf8_u8 = char_converter<char8_t, Utf8Conv<char8_t>>;
         using utf16be = char_converter<char16_t, Utf16Conv<true>>;
         using utf16le = char_converter<char16_t, Utf16Conv<false>>;
-        // using u8_utf8 = char_converter<char8_t, [](auto it) { return it; }, [](auto it) { return it; }>;
     }
 }

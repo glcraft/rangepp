@@ -48,6 +48,7 @@ int main()
     using namespace rpp::conv;
     using namespace std::literals;
     auto from_u8 = "hélloそれはテストです"| from<utf8>;
+    auto from_u82 = u8"hélloそれはテストです"| from<utf8_u8>;
     auto from_u16 = u"h\xe9llo\x305d\x308c\x306f\x30c6\x30b9\x30c8\x3067\x3059"sv | from<utf16be> | from<utf8>;
     auto to_utf8 = from_u16;
     for(auto it = to_utf8.begin(); it!=to_utf8.end();++it)
