@@ -30,12 +30,13 @@ namespace rpp
                     return static_cast<uint32_t>(ch[0]);
                 else
                 {
-                    uint32_t result = static_cast<uint32_t>(ch[0] & (0x7F >> len)) << 6;
+                    uint32_t result = static_cast<uint32_t>(ch[0] & (0x7F >> len));
                     auto it=std::data(ch)+1;
                     auto end = std::data(ch)+len;
-                    for (; it!=end; result<<6, ++it) {
+                    do {
+                        result<<=6;
                         result += static_cast<uint32_t>((*it) & 0x3F);
-                    }
+                    } while (++it != end);
                     return result;
                 }
             }
