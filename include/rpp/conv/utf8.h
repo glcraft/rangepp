@@ -123,9 +123,26 @@ namespace rpp
                 return result;
             }
         };
+        struct Utf32Conv {
+            static constexpr uint32_t max_char = 1;
+            using char_type = char32_t;
+            static constexpr uint32_t length(char_type ch) {
+                return 1;
+            }
+            static constexpr uint32_t from(std::array<char_type, max_char> ch) {
+                return ch[0];
+            }
+            static constexpr CharsInfo<char_type, max_char> to(char_type ch) {
+                return CharsInfo<char_type, max_char> {
+                    .chars= std::array{ch},
+                    .size = 1,
+                };
+            }
+        };
         using utf8 = char_converter<char, Utf8Conv<char>>;
         using utf8_u8 = char_converter<char8_t, Utf8Conv<char8_t>>;
         using utf16be = char_converter<char16_t, Utf16Conv<true>>;
         using utf16le = char_converter<char16_t, Utf16Conv<false>>;
+        using utf32 = char_converter<char32_t, Utf32Conv>;
     }
 }
