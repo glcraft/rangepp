@@ -28,7 +28,7 @@ namespace rpp
         };
 
         template <typename ...Args>
-        using tag_from_range_t = tag_from_range<Args...>::type;
+        using tag_from_range_t = typename tag_from_range<Args...>::type;
     } // namespace impl
     
 } // namespace rpp
