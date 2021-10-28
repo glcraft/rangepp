@@ -19,7 +19,7 @@ Available:
 * utf16le
 * utf32
 
-Example:
+## Example
 
 ```cpp
 int main()
@@ -31,4 +31,33 @@ int main()
     assert(utf8str == std::u8string_view(u8"你好"));
     return 0;
 }
+```
+
+## `math` - Mathematics manipulation
+
+Work in progress. Make operation on ranges values.
+
+Available: 
+* add_const
+* minus_const
+* mult_const
+* div_const
+* mod_const
+* bit_and_const
+* bit_or_const
+* bit_xor_const
+
+## Example
+
+```cpp
+int main()
+{
+    using namespace rpp::conv;
+    auto ls = std::array{0.f,1.f,2.f,3.f};
+    auto incr_ls = ls | rpp::math::add_const<0.5f>;
+    for (auto c : incr_ls)
+        std::cout << c << ' ';
+    return 0;
+}
+// Result: 0.5 1.5 2.5 3.5
 ```
