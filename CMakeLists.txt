@@ -2,9 +2,14 @@ cmake_minimum_required(VERSION 3.10)
 
 project(rangepp)
 
-set(BUILD_APP OFF CACHE BOOL "Build the application test")
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(BUILD_APP ON CACHE BOOL "Build the application test")
+else()
+    set(BUILD_APP OFF CACHE BOOL "Build the application test")
+endif()
 
-add_library(rangepp INTERFACE)
+file(GLOB_RECURSE APP_SRCS "include/*")
+add_library(rangepp INTERFACE ${APP_SRCS})
 
 target_include_directories(rangepp INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set_target_properties(rangepp PROPERTIES 
