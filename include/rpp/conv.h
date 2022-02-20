@@ -23,74 +23,74 @@ namespace rpp
         template <typename Container, typename Range>
         concept to_container = std::ranges::viewable_range<Range> && to_converter<typename Container::template to<Range>>;
         
-            template <std::ranges::viewable_range Range, from_converter Converter>
-            class from_view : public std::ranges::view_interface<from_view<Range, Converter>>{
-                Range m_rng;
-            public:
-                using iterator = Converter;
-                constexpr from_view() requires std::default_initializable<Range> = default;
-                
-                constexpr from_view(Range&& rng) : m_rng(std::forward<Range>(rng))
-                {}
+        template <std::ranges::viewable_range Range, from_converter Converter>
+        class from_view : public std::ranges::view_interface<from_view<Range, Converter>>{
+            Range m_rng;
+        public:
+            using iterator = Converter;
+            constexpr from_view() requires std::default_initializable<Range> = default;
+            
+            constexpr from_view(Range&& rng) : m_rng(std::forward<Range>(rng))
+            {}
 
-                [[nodiscard]] inline constexpr Range base() const& noexcept {
-                    return m_rng;
-                }
-                [[nodiscard]] inline constexpr Range base() && noexcept {
-                    return std::move(m_rng);
-                }
-                constexpr auto begin() const
-                {
-                    return iterator{std::ranges::begin(m_rng)};
-                }
-                constexpr auto begin()
-                {
-                    return iterator{std::ranges::begin(m_rng)};
-                }
-                constexpr auto end() const
-                {
-                    return iterator{std::ranges::end(m_rng)};
-                }
-                constexpr auto end()
-                {
-                    return iterator{std::ranges::end(m_rng)};
-                }
-            };
-            template <std::ranges::viewable_range Range, from_converter Converter>
-            from_view(Range&&, Converter) -> from_view<std::views::all_t<Range>, Converter>;
-            template <std::ranges::viewable_range Range, to_converter Converter>
-            class to_view : public std::ranges::view_interface<to_view<Range, Converter>>{
-                Range m_rng;
-            public:
-                using iterator = Converter;
-                constexpr to_view() requires std::default_initializable<Range> = default;
-                
-                constexpr to_view(Range&& rng) : m_rng(std::forward<Range>(rng))
-                {}
+            [[nodiscard]] inline constexpr Range base() const& noexcept {
+                return m_rng;
+            }
+            [[nodiscard]] inline constexpr Range base() && noexcept {
+                return std::move(m_rng);
+            }
+            constexpr auto begin() const
+            {
+                return iterator{std::ranges::begin(m_rng)};
+            }
+            constexpr auto begin()
+            {
+                return iterator{std::ranges::begin(m_rng)};
+            }
+            constexpr auto end() const
+            {
+                return iterator{std::ranges::end(m_rng)};
+            }
+            constexpr auto end()
+            {
+                return iterator{std::ranges::end(m_rng)};
+            }
+        };
+        template <std::ranges::viewable_range Range, from_converter Converter>
+        from_view(Range&&, Converter) -> from_view<std::views::all_t<Range>, Converter>;
+        template <std::ranges::viewable_range Range, to_converter Converter>
+        class to_view : public std::ranges::view_interface<to_view<Range, Converter>>{
+            Range m_rng;
+        public:
+            using iterator = Converter;
+            constexpr to_view() requires std::default_initializable<Range> = default;
+            
+            constexpr to_view(Range&& rng) : m_rng(std::forward<Range>(rng))
+            {}
 
-                [[nodiscard]] inline constexpr Range base() const& noexcept {
-                    return m_rng;
-                }
-                [[nodiscard]] inline constexpr Range base() && noexcept {
-                    return std::move(m_rng);
-                }
-                constexpr auto begin() const
-                {
-                    return iterator{std::ranges::begin(m_rng)};
-                }
-                constexpr auto begin()
-                {
-                    return iterator(std::ranges::begin(m_rng));
-                }
-                constexpr auto end() const
-                {
-                    return iterator{std::ranges::end(m_rng)};
-                }
-                constexpr auto end()
-                {
-                    return iterator{std::ranges::end(m_rng)};
-                }
-            };
+            [[nodiscard]] inline constexpr Range base() const& noexcept {
+                return m_rng;
+            }
+            [[nodiscard]] inline constexpr Range base() && noexcept {
+                return std::move(m_rng);
+            }
+            constexpr auto begin() const
+            {
+                return iterator{std::ranges::begin(m_rng)};
+            }
+            constexpr auto begin()
+            {
+                return iterator(std::ranges::begin(m_rng));
+            }
+            constexpr auto end() const
+            {
+                return iterator{std::ranges::end(m_rng)};
+            }
+            constexpr auto end()
+            {
+                return iterator{std::ranges::end(m_rng)};
+            }
+        };
         namespace impl
         {
             template <typename Container>
@@ -119,5 +119,19 @@ namespace rpp
         inline constexpr impl::from_fn<Converter> from;
         template <typename Converter>
         inline constexpr impl::to_fn<Converter> to;
+
+        template <typename From, typename To>
+        struct convert_fn : rpp::impl::pipe_base<convert_fn<From, To>>
+        {
+            template <std::ranges::viewable_range Range>
+            inline constexpr auto operator()(Range&& c) const noexcept
+            {
+                auto from_c = from_view<Range, typename From::template from<Range>>(std::forward<Range>(c));
+                auto from_to_c = to_view<decltype(from_c), typename To::template to<decltype(from_c)>>(std::move(from_c));
+                return from_to_c;
+            }
+        };
+        template <typename From, typename To>
+        inline constexpr convert_fn<From, To> convert;
     } // namespace conv
 }
