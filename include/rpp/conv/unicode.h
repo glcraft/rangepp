@@ -24,7 +24,7 @@ namespace rpp
                 else
                     return 1;
             }
-            static constexpr uint32_t from(std::array<char_type, max_char> ch) {
+            static constexpr uint32_t from(std::array<char_type, max_char+1> ch) {
                 auto len = length(ch[0]);
                 if (len == 1)
                     return static_cast<uint32_t>(ch[0]);
@@ -40,37 +40,37 @@ namespace rpp
                     return result;
                 }
             }
-            static constexpr CharsInfo<char_type, max_char> to(uint32_t ch) {
+            static constexpr std::array<char_type, max_char+1> to(uint32_t ch) {
                 constexpr auto create_subchar = [](auto ch, unsigned char add = 0x80) {
                     return  static_cast<CharType>(add | static_cast<unsigned char>(ch));
                 };
-                CharsInfo<char_type, 4> result;
+                std::array<char_type, 5> result;
                 
                 if (ch <= 0x7F)
                 {
-                    result.chars[0] = ch;
-                    result.size = 1;
+                    result[0] = ch;
+                    result[1] = '\0';
                 }
                 else if (ch <= 0x07FF)
                 {
-                    result.chars[0] = create_subchar(ch >> 6, 0xC0);
-                    result.chars[1] = create_subchar(ch & 0x3f);
-                    result.size = 2;
+                    result[0] = create_subchar(ch >> 6, 0xC0);
+                    result[1] = create_subchar(ch & 0x3f);
+                    result[2] = '\0';
                 }
                 else if (ch <= 0xFFFF)
                 {
-                    result.chars[0] = create_subchar(ch >> 12, 0xE0);
-                    result.chars[1] = create_subchar((ch >> 6) & 0x3f);
-                    result.chars[2] = create_subchar(ch & 0x3f);
-                    result.size = 3;
+                    result[0] = create_subchar(ch >> 12, 0xE0);
+                    result[1] = create_subchar((ch >> 6) & 0x3f);
+                    result[2] = create_subchar(ch & 0x3f);
+                    result[3] = '\0';
                 }
                 else
                 {
-                    result.chars[0] = create_subchar(ch >> 18, 0xE0);
-                    result.chars[1] = create_subchar((ch >> 12) & 0x3f);
-                    result.chars[2] = create_subchar((ch >> 6) & 0x3f);
-                    result.chars[3] = create_subchar(ch & 0x3f);
-                    result.size = 4;
+                    result[0] = create_subchar(ch >> 18, 0xE0);
+                    result[1] = create_subchar((ch >> 12) & 0x3f);
+                    result[2] = create_subchar((ch >> 6) & 0x3f);
+                    result[3] = create_subchar(ch & 0x3f);
+                    result[4] = '\0';
                 }
                 return result;
             }
@@ -91,7 +91,7 @@ namespace rpp
             static constexpr uint32_t length(char_type ch) {
                 return 1 + uint32_t((swap_endian(ch)&0xFC00) == 0xD800);
             }
-            static constexpr uint32_t from(std::array<char_type, max_char> ch) {
+            static constexpr uint32_t from(std::array<char_type, max_char+1> ch) {
                 auto len = length(ch[0]);
                 for (auto& c : ch)
                     c =swap_endian(c);
@@ -105,20 +105,20 @@ namespace rpp
                 else
                     return static_cast<uint32_t>(ch[0]);
             }
-            static constexpr CharsInfo<char_type, max_char> to(char_type ch) {
-                CharsInfo<char16_t, 2> result;
+            static constexpr std::array<char_type, max_char+1> to(char_type ch) {
+                std::array<char16_t, 3> result;
                 if (ch <= 0xFFFF)
                 {
-                    result.chars[0] = static_cast<char16_t>(ch);
-                    result.size=1;
+                    result[0] = static_cast<char16_t>(ch);
+                    result[1] = '\0';
                 }
                 else
                 {
-                    result.chars[0] = static_cast<char16_t>(0xD800 | ((ch >> 10) & 0x3FF + (1 << 6)));
-                    result.chars[1] = static_cast<char16_t>(0xDC00 | (ch & 0x3FF));
-                    result.size=2;
+                    result[0] = static_cast<char16_t>(0xD800 | ((ch >> 10) & 0x3FF + (1 << 6)));
+                    result[1] = static_cast<char16_t>(0xDC00 | (ch & 0x3FF));
+                    result[2] = '\0';
                 }
-                for (auto& c : result.chars)
+                for (auto& c : result)
                     c = swap_endian(c);
                 return result;
             }
@@ -129,14 +129,11 @@ namespace rpp
             static constexpr uint32_t length(char_type ch) {
                 return 1;
             }
-            static constexpr uint32_t from(std::array<char_type, max_char> ch) {
+            static constexpr uint32_t from(std::array<char_type, max_char+1> ch) {
                 return ch[0];
             }
-            static constexpr CharsInfo<char_type, max_char> to(char_type ch) {
-                return CharsInfo<char_type, max_char> {
-                    .chars= std::array{ch},
-                    .size = 1,
-                };
+            static constexpr std::array<char_type, max_char+1> to(char_type ch) {
+                return {ch, '\0'};
             }
         };
         using utf8 = char_converter<char, Utf8Conv<char>>;

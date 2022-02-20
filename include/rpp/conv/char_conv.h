@@ -5,20 +5,13 @@ namespace rpp
 {
     namespace conv
     {
-        template <typename CharType, size_t CharNumb>
-        struct CharsInfo
-        {
-            std::array<CharType, CharNumb> chars = {};
-            char size=0;
-        };
-
         template <class Converter, typename CharType>
-        concept is_char_converter = requires (CharType arg_length, std::array<CharType, Converter::max_char> arg_from, uint32_t arg_to){
+        concept is_char_converter = requires (CharType arg_length, std::array<CharType, Converter::max_char+1> arg_from, uint32_t arg_to){
             std::same_as<typename Converter::char_type, CharType>;
             std::same_as<decltype(Converter::max_char), uint32_t>;
             {Converter::length(arg_length)}->std::same_as<uint32_t>;
             {Converter::from(arg_from)} -> std::convertible_to<uint32_t>;
-            {Converter::to(arg_to)} -> std::convertible_to<CharsInfo<CharType, Converter::max_char>>;
+            {Converter::to(arg_to)} -> std::convertible_to<std::array<CharType, Converter::max_char+1>>;
         };
         
         template <typename CharType, is_char_converter<CharType> Converter>
@@ -49,12 +42,13 @@ namespace rpp
                 {}
 
                 [[nodiscard]] constexpr decltype(auto) operator*() const noexcept {
-                    std::array<CharType, Converter::max_char> seq;
+                    std::array<CharType, Converter::max_char+1> seq;
                     auto it = m_iter;
                     seq[0] = *it++;
                     auto len = Converter::length(seq[0]);
                     for(decltype(len) i=1;i<len;++i)
                         seq[i] = *it++;
+                    seq[len] = '\0';
                     return Converter::from(seq);
                 }
                 constexpr from& operator++() 
@@ -80,8 +74,8 @@ namespace rpp
                 using Base = const InputRange;
                 using Iterator = std::ranges::iterator_t<InputRange>;
                 Iterator m_iter;
-                CharsInfo<CharType, Converter::max_char> mutable m_chars;
-                char mutable m_current_char = Converter::max_char;
+                std::array<CharType, Converter::max_char+1> mutable m_chars;
+                char m_current_char = 0;
             public:
                 using input_type = uint32_t;
                 using output_type = CharType;
@@ -93,18 +87,23 @@ namespace rpp
                 to() : m_iter(nullptr)
                 {}
                 to(Iterator&& it) : m_iter(std::move(it))
-                {}
+                {
+                    for (auto& c : m_chars)
+                        c = '\0';
+                }
                 [[nodiscard]] constexpr decltype(auto) operator*() const {
-                    if (m_current_char >= m_chars.size)
+                    auto test = *m_iter;
+                    if (current_char() == 0)
                         read_char();
-                    return m_chars.chars[m_current_char];
+                    return current_char();
                 }
                 constexpr to& operator++() {
                     ++m_current_char;
-                    if (m_current_char >= m_chars.size)
+                    if (current_char() == 0)
                     {
                         ++m_iter;
-                        m_current_char = Converter::max_char;
+                        read_char();
+                        m_current_char = 0;
                     }
                     return *this;
                 }
@@ -116,12 +115,17 @@ namespace rpp
                 }
                 [[nodiscard]] friend constexpr bool operator==(const to &x, const to &y)
                 {
-                    return x.m_iter == y.m_iter;
+                    return 
+                        x.m_iter == y.m_iter
+                        && x.m_current_char == y.m_current_char;
                 }
             private:
+                constexpr CharType current_char() const noexcept {
+                    return m_chars[m_current_char];
+                }
                 constexpr void read_char() const {
-                    m_chars = Converter::to(*m_iter);
-                    m_current_char = 0;
+                    auto c = *m_iter;
+                    m_chars = Converter::to(c);
                 }
             };
         };
