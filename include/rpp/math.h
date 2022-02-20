@@ -19,7 +19,7 @@ namespace rpp
         class binary_op_view : public std::ranges::view_interface<binary_op_view<Range, Op>>
         {
         public:
-            using value_type = Range::value_type;
+            using value_type = typename Range::value_type;
             using operator_type = Op;
 
             class iterator {
@@ -27,12 +27,12 @@ namespace rpp
                 using Parent = binary_op_view<Range, Op>;
                 using Base = Range;
             public:
-                using value_type = Range::value_type;
+                using value_type = typename Range::value_type;
                 using operator_type = Op;
                 
                 // using iterator_concept = typename tag_from_range_t<Range>;
                 // using iterator_category = ;
-                using value_type = typename Base::value_type;
+                // using value_type = typename Base::value_type;
                 using difference_type = std::ranges::range_difference_t<Base>;
 
                 iterator() requires std::default_initializable<std::ranges::iterator_t<Base>> = default;
@@ -92,7 +92,7 @@ namespace rpp
             };
             constexpr binary_op_view() requires std::default_initializable<Range>
             {}
-            constexpr binary_op_view(Range rng, Range::value_type n) : m_rng(std::move(rng)), m_adds(n)
+            constexpr binary_op_view(Range rng, typename Range::value_type n) : m_rng(std::move(rng)), m_adds(n)
             {}
 
             [[nodiscard]] inline constexpr Range base() const& noexcept {
