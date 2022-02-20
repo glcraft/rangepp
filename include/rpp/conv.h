@@ -23,11 +23,6 @@ namespace rpp
         template <typename Container, typename Range>
         concept to_container = std::ranges::viewable_range<Range> && to_converter<typename Container::template to<Range>>;
         
-
-        namespace impl
-        {
-           
-
             template <std::ranges::viewable_range Range, from_converter Converter>
             class from_view : public std::ranges::view_interface<from_view<Range, Converter>>{
                 Range m_rng;
@@ -63,17 +58,6 @@ namespace rpp
             };
             template <std::ranges::viewable_range Range, from_converter Converter>
             from_view(Range&&, Converter) -> from_view<std::views::all_t<Range>, Converter>;
-
-            template <typename Container>
-            struct from_fn : rpp::impl::pipe_base<from_fn<Container>>
-            {
-                template <std::ranges::viewable_range Range>
-                    requires from_container<Container, Range>
-                inline constexpr auto operator()(Range&& rng) const noexcept
-                {
-                    return from_view<Range, typename Container::template from<Range>>(std::forward<Range>(rng));
-                }
-            };
             template <std::ranges::viewable_range Range, to_converter Converter>
             class to_view : public std::ranges::view_interface<to_view<Range, Converter>>{
                 Range m_rng;
@@ -107,9 +91,18 @@ namespace rpp
                     return iterator{std::ranges::end(m_rng)};
                 }
             };
-
-            
-            
+        namespace impl
+        {
+            template <typename Container>
+            struct from_fn : rpp::impl::pipe_base<from_fn<Container>>
+            {
+                template <std::ranges::viewable_range Range>
+                    requires from_container<Container, Range>
+                inline constexpr auto operator()(Range&& rng) const noexcept
+                {
+                    return from_view<Range, typename Container::template from<Range>>(std::forward<Range>(rng));
+                }
+            };
             template <typename Container>
             struct to_fn : rpp::impl::pipe_base<to_fn<Container>>
             {
@@ -121,6 +114,7 @@ namespace rpp
                 }
             };
         }
+        
         template <typename Converter>
         inline constexpr impl::from_fn<Converter> from;
         template <typename Converter>
