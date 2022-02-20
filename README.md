@@ -10,7 +10,7 @@ C++20 concepts and ranges are reuqired to compile with the library.
 
 ## `conv` - Character encode/decode
 
-Conversion from and to different character encoding. Actually only unicode encodings are implemented.
+Conversion from and to different character encoding. Actually only unicode encodings are implemented in the library, but it can be extended.
 
 Available: 
 * utf8 (for `char`)
@@ -25,15 +25,23 @@ Available:
 int main()
 {
     using namespace rpp::conv;
-    auto str = std::views::all(u"你好"); // Hello
+
+    // Classic range usage
+    auto str = u"hélloそれはテストです"s;
     auto rng_utf8 = str | from<utf16be> | to<utf8_u8>;
     auto utf8str = std::u8string(rng_utf8.begin(), rng_utf8.end());
-    assert(utf8str == std::u8string_view(u8"你好"));
+    assert(utf8str == std::u8string_view(u8"hélloそれはテストです"));
+
+    // Using rpp::conv::convert helper
+    auto rng_u16_u8 = str | convert<utf16be, utf8_u8>;
+
+    // Collect directly into string
+    auto string_u16_u8 = str | convert<utf16be, utf8_u8> | rpp::collect<std::u8string>;
     return 0;
 }
 ```
 
-## `math` - Mathematics manipulation
+## `math` - Mathematics manipulation (WIP)
 
 Work in progress. Make operation on ranges values.
 
