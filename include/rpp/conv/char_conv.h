@@ -38,7 +38,7 @@ namespace rpp
                 
                 from() : m_iter(nullptr)
                 {}
-                from(Iterator&& it) : m_iter(std::move(it))
+                from(Iterator&& it) : m_iter(std::forward<Iterator>(it))
                 {}
 
                 [[nodiscard]] constexpr decltype(auto) operator*() const noexcept {
@@ -71,7 +71,7 @@ namespace rpp
                 requires std::forward_iterator<std::ranges::iterator_t<InputRange>>
             class to
             {
-                using Base = const InputRange;
+                using Base = InputRange;
                 using Iterator = std::ranges::iterator_t<InputRange>;
                 Iterator m_iter;
                 std::array<CharType, Converter::max_char+1> mutable m_chars;
